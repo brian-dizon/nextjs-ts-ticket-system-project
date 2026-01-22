@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import DeleteButton from "./DeleteButton";
+import Link from "next/link";
+import { TiEdit } from "react-icons/ti";
 
 const getTicket = async (id: string) => {
   const supabase = await createClient();
@@ -22,15 +24,20 @@ export default async function TicketDetails({ params }: { params: Promise<{ id: 
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log("Ticket Owner:", ticket.user_email);
-  console.log("Current User:", user?.email);
+  // console.log("Ticket Owner:", ticket.user_email);
+  // console.log("Current User:", user?.email);
 
   return (
     <main>
       <nav>
         <h2>Ticket Details</h2>
         {user?.email === ticket.user_email && (
-          <div className="ml-auto">
+          <div className="ml-auto flex gap2">
+            <Link href={`/tickets/edit/${ticket.id}`}>
+              <button className="btn-secondary">
+                <TiEdit /> Edit
+              </button>
+            </Link>
             <DeleteButton id={ticket.id} />
           </div>
         )}

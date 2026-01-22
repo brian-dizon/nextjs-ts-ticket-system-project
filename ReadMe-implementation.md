@@ -294,3 +294,86 @@ attacker@email.com, the query will find 0 rows to delete because the email won't
 - No `try/catch` in client: The client component stays clean.
 - useActionState wraps your server action. It calls addTicket(currentState, formData) for you when the form submits.
 - state.message will contain whatever your server action returns (error or success string).
+
+## New Feature: Updating a Ticket:
+
+Let's complete the CRUD cycle with the Update (Edit) feature.
+
+## Step 1: Create the Update Action
+
+- First, we need the server-side logic to handle the update.
+- It's very similar to `addTicket`, but it uses `.update()` instead of `.insert()`.
+
+## Step 2: Create the Edit Page
+
+- We need a page that fetches the existing ticket data and displays a form.
+- To save time and keep code `DRY (Don't Repeat Yourself)`, we could refactor `CreateForm` to be reusable.
+- But for learning clarity, let's create a dedicated `EditForm` first. It's easier to understand.
+
+- 2.a Create `src/app/tickets/edit/[id]/page.tsx`
+- 2.b Create `src/app/tickets/edit/[id]/EditForm.tsx`--- This is the Client Component. It receives the ticket as a prop and uses it to fill the initialState of our fields.
+
+### Key Concept: `defaultValue`
+
+In React, defaultValue sets the initial value of an input but leaves it "uncontrolled" so the user can type freely. This is perfect for forms submitted via Server Actions/FormData.
+
+1. bind(null, ticket.id)
+
+The Problem:
+Our server action updateTicket is defined like this:
+1 function updateTicket(id, prevState, formData)
+It needs 3 arguments.
+
+But the <form action={...}> (via useActionState) is hard-coded by React to only send 2 arguments:
+
+1 someAction(prevState, formData)
+React doesn't know about our id!
+
+The Solution: `.bind()`
+.bind() is a standard JavaScript method. It creates a new copy of a function with some arguments "baked in" (pre-filled).
+
+- Argument 1 (`null`): This sets the this context. In Server Actions, we don't care about this, so we pass null.
+- Argument 2 (`ticket.id`): This becomes the first argument of the new function.
+
+So, updateTicketWithId is basically a new function that looks like:
+
+1 function updateTicketWithId(prevState, formData) {
+2 // It calls the original function, inserting 'ticket.id' first!
+3 return updateTicket("123", prevState, formData);
+4 }
+Now, the signature matches what React expects (2 args), but our logic gets all 3 args it needs.
+
+---
+
+2. useActionState
+
+This is a React hook designed specifically for form submissions. It acts as a manager between your UI and your Server
+Action.
+
+1 const [state, formAction] = useActionState(updateTicketWithId, initialState);
+
+It takes 2 inputs:
+
+1.  The Action: The function to run when the form submits (updateTicketWithId).
+2.  Initial State: What state should be before the user does anything (e.g., { message: "" }).
+
+It returns 2 outputs:
+
+1.  `state`: The current data returned by the server action.
+    - Initially: { message: "" }
+    - After success: { message: "Success" }
+    - After error: { message: "Could not update..." }
+    - Magic: React automatically updates this variable when the server responds!
+2.  `formAction`: A special function handler. You attach this to <form action={formAction}>.
+    - When the user clicks submit, React intercepts it.
+    - It grabs the state (from the previous run).
+    - It grabs the formData (from the inputs).
+    - It calls your action: action(prevState, formData).
+
+In simple terms:
+useActionState is a helper that says: "I will listen to this form submit. I will run your server code. I will wait for the
+answer. And I will update this state variable so you can show success/error messages easily."
+
+## Step 3: Add "Edit" button to the ticket card
+
+1. Update `src/app/tickets/[id]/page.tsx` to include a `Link` to the edit page.
