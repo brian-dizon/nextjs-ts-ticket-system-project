@@ -292,3 +292,5 @@ attacker@email.com, the query will find 0 rows to delete because the email won't
 
 - Feedback Loop: The server can now "talk back" to the specific form instance.
 - No `try/catch` in client: The client component stays clean.
+- useActionState wraps your server action. It calls addTicket(currentState, formData) for you when the form submits.
+- state.message will contain whatever your server action returns (error or success string).
